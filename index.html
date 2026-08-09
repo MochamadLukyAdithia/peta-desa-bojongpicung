@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Peta Desa Bojongpicung</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f2b1f;
+    --paper:#f4efe3;
+    --forest:#2f4a37;
+    --forest-dark:#20331f;
+    --ochre:#c98a2c;
+    --ochre-light:#e7b463;
+    --river:#3f7f8c;
+    --line:#dcd3ba;
+    --card:#fffdf7;
+    --sheet-h-collapsed: 96px;
+    --sheet-h-expanded: 72vh;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;font-family:'Public Sans',sans-serif;color:var(--ink);background:var(--paper);overscroll-behavior:none;}
+  #app{position:relative;height:100%;overflow:hidden;}
+
+  /* ===== TOP BAR ===== */
+  header{
+    position:absolute; top:0; left:0; right:0; z-index:900;
+    background:linear-gradient(180deg, rgba(32,51,31,.92), rgba(32,51,31,.55) 80%, transparent);
+    color:var(--paper);
+    padding:12px 14px 26px;
+    display:flex; flex-direction:column; gap:2px;
+    pointer-events:none;
+  }
+  header .eyebrow{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ochre-light); font-weight:600;
+  }
+  header h1{
+    font-family:'Fraunces',serif; font-weight:600; font-size:18px; margin:0; line-height:1.2;
+  }
+
+  /* ===== MAP ===== */
+  #map{position:absolute; inset:0;}
+
+  /* ===== BASEMAP SWITCH (floating) ===== */
+  #basemapSwitch{
+    position:absolute; top:64px; right:12px; z-index:900;
+    background:var(--card); border-radius:10px; overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,.25); display:flex; flex-direction:column;
+  }
+  #basemapSwitch button{
+    border:none; background:var(--card); color:var(--ink); font-family:inherit;
+    font-size:11px; padding:9px 10px; cursor:pointer; border-bottom:1px solid var(--line);
+    min-width:56px;
+  }
+  #basemapSwitch button:last-child{border-bottom:none;}
+  #basemapSwitch button.active{background:var(--forest); color:var(--paper); font-weight:600;}
+
+  /* ===== LOCATE BUTTON ===== */
+  #locateBtn{
+    position:absolute; z-index:900; right:12px; top: 160px;
+    background:var(--card); border:none; border-radius:50%;
+    width:44px; height:44px; box-shadow:0 3px 10px rgba(0,0,0,.25);
+    font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ===== BOTTOM SHEET ===== */
+  #sheet{
+    position:absolute; left:0; right:0; bottom:0; z-index:950;
+    background:var(--card); border-radius:16px 16px 0 0;
+    box-shadow:0 -4px 18px rgba(0,0,0,.22);
+    height:var(--sheet-h-collapsed);
+    transition:height .28s ease;
+    display:flex; flex-direction:column;
+    touch-action:none;
+  }
+  #sheet.expanded{ height:var(--sheet-h-expanded); }
+  #sheetHandle{
+    padding:10px 0 6px; display:flex; flex-direction:column; align-items:center; gap:8px;
+    cursor:pointer; flex-shrink:0;
+  }
+  #sheetHandle .bar{width:38px; height:4px; border-radius:3px; background:var(--line);}
+  #sheetHandle .title-row{
+    width:100%; display:flex; align-items:center; justify-content:space-between; padding:0 18px;
+  }
+  #sheetHandle .title-row span.t{font-family:'Fraunces',serif; font-weight:600; font-size:15px;}
+  #sheetHandle .title-row span.h{font-size:11px; color:#8a8168;}
+
+  #sheetBody{ overflow-y:auto; padding:4px 16px 24px; flex:1; -webkit-overflow-scrolling:touch; }
+
+  #sheet:not(.expanded) #sheetBody{ display:none; }
+
+  .tabbar{ display:flex; gap:6px; margin:6px 0 14px; }
+  .tabbar button{
+    flex:1; border:1px solid var(--line); background:var(--paper); color:var(--forest-dark);
+    font-family:'Public Sans',sans-serif; font-weight:600; font-size:12px;
+    padding:9px 4px; border-radius:8px; cursor:pointer;
+  }
+  .tabbar button.active{ background:var(--forest); color:var(--paper); border-color:var(--forest); }
+
+  .layer-group{background:#fbf8ef;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .layer-group-title{font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--forest);margin-bottom:8px;}
+  .layer-item{
+    display:flex; align-items:center; gap:10px; padding:8px 2px; font-size:14px; color:#3a3a32;
+    border-bottom:1px solid #efe9d8;
+  }
+  .layer-item:last-child{border-bottom:none;}
+  .layer-item input{ width:19px; height:19px; accent-color:var(--forest); flex-shrink:0; }
+  .swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .count{margin-left:auto; font-size:11.5px; color:#948b72; background:#efe6cf; padding:1px 7px; border-radius:10px;}
+
+  .empty-note{
+    font-size:12px; line-height:1.5; color:#7a7157; background:#fbf3df;
+    border-left:3px solid var(--ochre); padding:8px 10px; border-radius:0 6px 6px 0; margin-top:4px;
+  }
+
+  .leaflet-popup-content-wrapper{ background:var(--card); border-radius:8px; font-family:'Public Sans',sans-serif; }
+  .popup-title{font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;margin:0 0 4px;color:var(--forest-dark);}
+  .popup-tag{
+    display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;
+    background:var(--forest);color:var(--paper);padding:2px 8px;border-radius:3px;margin-bottom:6px;
+  }
+  .leaflet-control-zoom{ display:none; }
+
+  /* ===== PERBAIKAN DESKTOP (Tampilan Laptop) ===== */
+  @media (min-width:820px){
+    :root{ --sheet-h-collapsed: 100%; }
+    
+    /* Panel samping kiri */
+    #sheet{
+      left:0; right:auto; top:0; bottom:0; width:320px; height:100% !important;
+      border-radius:0; box-shadow:3px 0 14px rgba(0,0,0,.15);
+    }
+    #sheetHandle{ cursor:default; padding-top:20px; }
+    #sheetHandle .bar, #sheetHandle .title-row span.h{ display:none; }
+    #sheetBody{ display:block !important; }
+
+    /* Header digeser agar tidak tertutup panel kiri */
+    header{ 
+      left: 320px; 
+      padding-left: 24px; 
+    }
+
+    /* Pemisahan posisi vertikal tombol kanan agar tidak bentrok/tumpang tindih */
+    #basemapSwitch{ 
+      top: 20px; 
+      right: 16px; 
+    }
+    #locateBtn{ 
+      top: 120px; /* Posisi ditempatkan tepat di bawah basemap switch */
+      right: 16px; 
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="eyebrow">Sistem Informasi Geospasial</div>
+    <h1>Peta Digital Desa Bojongpicung</h1>
+  </header>
+
+  <div id="map"></div>
+
+  <div id="basemapSwitch">
+    <button class="active" data-base="osm">Jalan</button>
+    <button data-base="sat">Satelit</button>
+  </div>
+  <button id="locateBtn" title="Lokasi saya">Lokasi Saya</button>
+
+  <div id="sheet">
+    <div id="sheetHandle">
+      <div class="bar"></div>
+      <div class="title-row">
+        <span class="t">Layer Peta</span>
+        <span class="h" id="sheetHint">Tarik ke atas ▲</span>
+      </div>
+    </div>
+    <div id="sheetBody">
+      <div class="tabbar">
+        <button class="active" data-tab="administrasi">Administrasi</button>
+        <button data-tab="fasilitas">Fasilitas</button>
+        <button data-tab="potensi">Potensi</button>
+      </div>
+
+      <div class="tab-panel" data-panel="administrasi">
+        <div class="layer-group">
+          <div class="layer-item"><input type="checkbox" checked data-layer="batasRW"><span class="swatch" style="background:#c98a2c"></span> Batas RW <span class="count" data-count="batasRW"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="batasRT"><span class="swatch" style="background:#8a6cc9"></span> Batas RT <span class="count" data-count="batasRT"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="titikRW"><span class="swatch" style="background:#c9639e"></span> Titik RW <span class="count" data-count="titikRW"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="rumahKetua"><span class="swatch" style="background:#3d6ea5"></span> Rumah Ketua RW/RT <span class="count" data-count="rumahKetua"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="posko"><span class="swatch" style="background:#2f4a37"></span> Posko <span class="count" data-count="posko"></span></div>
+        </div>
+        <div class="empty-note">Belum ada data batas Desa, Jalan Utama, dan Sungai </div>
+      </div>
+
+      <div class="tab-panel" data-panel="fasilitas" style="display:none">
+        <div class="layer-group">
+          <div class="layer-item"><input type="checkbox" checked data-layer="kantorDesa"><span class="swatch" style="background:#2f4a37"></span> Kantor Desa <span class="count" data-count="kantorDesa"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="pendidikan"><span class="swatch" style="background:#3d6ea5"></span> Pendidikan (Madrasah/MDTA) <span class="count" data-count="pendidikan"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="masjid"><span class="swatch" style="background:#2e8b57"></span> Masjid / Ibadah <span class="count" data-count="masjid"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="kebersihan"><span class="swatch" style="background:#d1495b"></span> Pembuangan Sampah <span class="count" data-count="kebersihan"></span></div>
+        </div>
+        <div class="empty-note">Belum ada data Puskesmas/Poskesdes, Posyandu, dan Lapangan.</div>
+      </div>
+
+      <div class="tab-panel" data-panel="potensi" style="display:none">
+        <div class="empty-note">Belum ada data Potensi Desa (lahan pertanian, UMKM, peternakan, wisata, perikanan).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="data_block.js"></script>
+<script>
+// ====================== PETA DASAR ======================
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 20
+});
+const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 20
+});
+
+const map = L.map('map', {
+  center: MAP_CENTER, zoom: 16, layers: [osm], zoomControl: false, tap: true
+});
+L.control.zoom({position:'bottomright'}).addTo(map);
+
+document.querySelectorAll('#basemapSwitch button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#basemapSwitch button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.base==='osm'){ map.removeLayer(sat); map.addLayer(osm); }
+    else { map.removeLayer(osm); map.addLayer(sat); }
+  });
+});
+
+document.getElementById('locateBtn').addEventListener('click', ()=>{
+  map.locate({setView:true, maxZoom:17});
+});
+
+// ====================== ICON / POPUP HELPERS ======================
+function dotIcon(color, size=16){
+  return L.divIcon({
+    className:'', html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fffdf7;box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>`,
+    iconSize:[size,size], iconAnchor:[size/2,size/2]
+  });
+}
+function popupHtml(tag, name){
+  return `<div class="popup-tag">${tag}</div><p class="popup-title">${name}</p>`;
+}
+
+// ====================== BUILD LAYERS FROM REAL_DATA ======================
+const styleMap = {
+  batasRW:   {type:'poly', color:'#c98a2c', weight:3, label:'Batas RW'},
+  batasRT:   {type:'poly', color:'#8a6cc9', weight:2, dash:'5,4', label:'Batas RT'},
+  titikRW:   {type:'point', color:'#c9639e', label:'RW'},
+  rumahKetua:{type:'point', color:'#3d6ea5', label:'Rumah Ketua'},
+  posko:     {type:'point', color:'#2f4a37', label:'Posko'},
+  kantorDesa:{type:'point', color:'#2f4a37', label:'Kantor Desa', size:20},
+  pendidikan:{type:'point', color:'#3d6ea5', label:'Pendidikan'},
+  masjid:    {type:'point', color:'#2e8b57', label:'Ibadah'},
+  kebersihan:{type:'point', color:'#d1495b', label:'Kebersihan'},
+};
+
+const layers = {};
+Object.keys(styleMap).forEach(key=>{
+  const cfg = styleMap[key];
+  const features = REAL_DATA[key] || [];
+  document.querySelectorAll(`[data-count="${key}"]`).forEach(el=> el.textContent = features.length);
+
+  if(cfg.type === 'poly'){
+    layers[key] = L.geoJSON({type:"FeatureCollection", features}, {
+      style: {color:cfg.color, weight:cfg.weight, dashArray:cfg.dash||null, fillOpacity:.08, fillColor:cfg.color}
+    }).bindTooltip(l => l.feature.properties.name, {sticky:true})
+      .eachLayer(l => l.bindPopup(popupHtml(cfg.label, l.feature.properties.name)));
+  } else {
+    const group = L.layerGroup();
+    features.forEach(f=>{
+      const [lng,lat] = f.geometry.coordinates;
+      L.marker([lat,lng], {icon:dotIcon(cfg.color, cfg.size||14)})
+        .bindPopup(popupHtml(cfg.label, f.properties.name))
+        .addTo(group);
+    });
+    layers[key] = group;
+  }
+  layers[key].addTo(map);
+});
+
+// Fit map to all boundary data
+const allBoundsLayer = L.featureGroup([layers.batasRW, layers.batasRT]);
+if(allBoundsLayer.getBounds().isValid()){
+  map.fitBounds(allBoundsLayer.getBounds(), {padding:[30,30]});
+}
+
+// ====================== CHECKBOX CONTROL ======================
+document.querySelectorAll('[data-layer]').forEach(cb=>{
+  cb.addEventListener('change', ()=>{
+    const l = layers[cb.dataset.layer];
+    if(!l) return;
+    if(cb.checked) map.addLayer(l); else map.removeLayer(l);
+  });
+});
+
+// ====================== TAB CONTROL ======================
+document.querySelectorAll('.tabbar button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p=>{
+      p.style.display = (p.dataset.panel === btn.dataset.tab) ? 'block' : 'none';
+    });
+  });
+});
+
+// ====================== BOTTOM SHEET DRAG (mobile) ======================
+const sheet = document.getElementById('sheet');
+const handle = document.getElementById('sheetHandle');
+const hint = document.getElementById('sheetHint');
+let dragStartY = null;
+
+function setExpanded(exp){
+  sheet.classList.toggle('expanded', exp);
+  hint.textContent = exp ? 'Tarik ke bawah ▼' : 'Tarik ke atas ▲';
+}
+
+handle.addEventListener('click', ()=> setExpanded(!sheet.classList.contains('expanded')));
+
+handle.addEventListener('touchstart', e=>{ dragStartY = e.touches[0].clientY; }, {passive:true});
+handle.addEventListener('touchend', e=>{
+  if(dragStartY === null) return;
+  const dy = e.changedTouches[0].clientY - dragStartY;
+  if(dy < -30) setExpanded(true);
+  if(dy > 30) setExpanded(false);
+  dragStartY = null;
+});
+
+// On desktop the sheet is always "expanded" (side panel)
+if(window.matchMedia('(min-width:820px)').matches){ setExpanded(true); }
+</script>
+</body>
+</html>
