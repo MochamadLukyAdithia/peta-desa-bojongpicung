@@ -184,10 +184,7 @@
       <div class="tab-panel" data-panel="administrasi">
         <div class="layer-group">
           <div class="layer-item"><input type="checkbox" checked data-layer="batasRW"><span class="swatch" style="background:#c98a2c"></span> Batas RW <span class="count" data-count="batasRW"></span></div>
-          <div class="layer-item"><input type="checkbox" checked data-layer="batasRT"><span class="swatch" style="background:#8a6cc9"></span> Batas RT <span class="count" data-count="batasRT"></span></div>
           <div class="layer-item"><input type="checkbox" checked data-layer="titikRW"><span class="swatch" style="background:#c9639e"></span> Titik RW <span class="count" data-count="titikRW"></span></div>
-          <div class="layer-item"><input type="checkbox" checked data-layer="rumahKetua"><span class="swatch" style="background:#3d6ea5"></span> Rumah Ketua RW/RT <span class="count" data-count="rumahKetua"></span></div>
-          <div class="layer-item"><input type="checkbox" checked data-layer="posko"><span class="swatch" style="background:#2f4a37"></span> Posko <span class="count" data-count="posko"></span></div>
         </div>
         <!-- <div class="empty-note">Belum ada data batas Desa, Jalan Utama, dan Sungai. Kirim KML-nya kalau sudah ada, nanti aku tambahkan.</div> -->
       </div>
@@ -195,11 +192,13 @@
       <div class="tab-panel" data-panel="fasilitas" style="display:none">
         <div class="layer-group">
           <div class="layer-item"><input type="checkbox" checked data-layer="kantorDesa"><span class="swatch" style="background:#2f4a37"></span> Kantor Desa <span class="count" data-count="kantorDesa"></span></div>
-          <div class="layer-item"><input type="checkbox" checked data-layer="pendidikan"><span class="swatch" style="background:#3d6ea5"></span> Pendidikan (Madrasah/MDTA) <span class="count" data-count="pendidikan"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="kantorKecamatan"><span class="swatch" style="background:#1d3557"></span> Kantor Kecamatan <span class="count" data-count="kantorKecamatan"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="pendidikan"><span class="swatch" style="background:#3d6ea5"></span> Sekolah / Pendidikan <span class="count" data-count="pendidikan"></span></div>
           <div class="layer-item"><input type="checkbox" checked data-layer="masjid"><span class="swatch" style="background:#2e8b57"></span> Masjid / Ibadah <span class="count" data-count="masjid"></span></div>
+          <div class="layer-item"><input type="checkbox" checked data-layer="posyandu"><span class="swatch" style="background:#e07a5f"></span> Posyandu <span class="count" data-count="posyandu"></span></div>
           <div class="layer-item"><input type="checkbox" checked data-layer="kebersihan"><span class="swatch" style="background:#d1495b"></span> Pembuangan Sampah <span class="count" data-count="kebersihan"></span></div>
         </div>
-        <!-- <div class="empty-note">Belum ada data Puskesmas/Poskesdes, Posyandu, dan Lapangan.</div> -->
+        <!-- <div class="empty-note">Belum ada data Puskesmas/Poskesdes dan Lapangan.</div> -->
       </div>
 
       <div class="tab-panel" data-panel="potensi" style="display:none">
@@ -266,13 +265,12 @@ function colorForRW(name){
 // ====================== BUILD LAYERS FROM REAL_DATA ======================
 const styleMap = {
   batasRW:   {type:'poly', color:'#c98a2c', weight:4, label:'Batas RW', perRWColor:true},
-  batasRT:   {type:'poly', color:'#8a6cc9', weight:2, dash:'5,4', label:'Batas RT'},
   titikRW:   {type:'point', color:'#c9639e', label:'RW'},
-  rumahKetua:{type:'point', color:'#3d6ea5', label:'Rumah Ketua'},
-  posko:     {type:'point', color:'#2f4a37', label:'Posko'},
   kantorDesa:{type:'point', color:'#2f4a37', label:'Kantor Desa', size:20},
-  pendidikan:{type:'point', color:'#3d6ea5', label:'Pendidikan'},
+  kantorKecamatan:{type:'point', color:'#1d3557', label:'Kantor Kecamatan', size:20},
+  pendidikan:{type:'point', color:'#3d6ea5', label:'Sekolah / Pendidikan'},
   masjid:    {type:'point', color:'#2e8b57', label:'Ibadah'},
+  posyandu:  {type:'point', color:'#e07a5f', label:'Posyandu'},
   kebersihan:{type:'point', color:'#d1495b', label:'Kebersihan'},
 };
 
@@ -332,7 +330,7 @@ Object.keys(styleMap).forEach(key=>{
 })();
 
 // Fit map to all boundary data
-const allBoundsLayer = L.featureGroup([layers.batasRW, layers.batasRT]);
+const allBoundsLayer = L.featureGroup([layers.batasRW]);
 if(allBoundsLayer.getBounds().isValid()){
   map.fitBounds(allBoundsLayer.getBounds(), {padding:[30,30]});
 }
